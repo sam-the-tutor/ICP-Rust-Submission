@@ -54,7 +54,7 @@ struct Member {
 }
 
 
-// a trait that must be implemented for a struct that is stored in a stable struct
+// Implement Storable and BoundedStorable for the Member struct
 
 impl Storable for Member {
 
@@ -111,7 +111,7 @@ impl BoundedStorable for TASK {
 }
 
 
-
+// Define memory managers, ID counters, and storage for tasks and members
 thread_local! {
 
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
@@ -322,7 +322,7 @@ fn _hours_to_nanoseconds(hours: u64) -> u64{
     let microseconds = milliseconds * 1000;
     let nanoseconds = microseconds * 1000;
     return nanoseconds;
-  }
+}
 
 
 
@@ -362,7 +362,8 @@ fn search_tasks(_query:String) -> Result<Vec<TASK>, Error> {
 
 
 
- // add a new task
+// add a new task
+
 #[ic_cdk::update]
 
 fn add_task(task: TASKPayload) ->  Result<TASK,Error> {
@@ -461,15 +462,8 @@ fn delete_task(id: u64) -> Result<TASK, Error> {
 
 }
 
+// Define an enum for error handling
 #[derive(candid::CandidType, Deserialize, Serialize)]
-
-// enum Error {
-
-//     NotFound { msg: String },
-
-
-// }
-
 enum Error {
     InvalidInput,
     TaskNotFound,
