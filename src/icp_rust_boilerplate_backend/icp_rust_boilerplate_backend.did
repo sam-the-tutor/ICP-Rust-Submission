@@ -1,3 +1,20 @@
+type Error = variant { NotFound : record { msg : text } };
+type Quiz = record {
+  id : nat64;
+  updated_at : opt nat64;
+  question : text;
+  answers : vec record { text; nat32 };
+  created_at : nat64;
+  options : vec text;
+};
+type QuizPayload = record { question : text; options : vec text };
+type Result = variant { Ok : Quiz; Err : Error };
+type Result_1 = variant { Ok : vec Quiz; Err : Error };
 service : {
-    "greet": (text) -> (text) query;
+  answer_quiz : (nat64, text) -> (Result);
+  create_quiz : (QuizPayload) -> (opt Quiz);
+  delete_quiz : (nat64) -> (Result);
+  get_all_quiz : () -> (Result_1) query;
+  get_quiz : (nat64) -> (Result) query;
+  update_quiz : (nat64, QuizPayload) -> (Result);
 }
