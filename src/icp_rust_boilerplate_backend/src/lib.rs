@@ -117,17 +117,26 @@ thread_local! {
     static MEMORY_MANAGER: RefCell<MemoryManager<DefaultMemoryImpl>> = RefCell::new(
 
         MemoryManager::init(DefaultMemoryImpl::default())
-
+        
     );
- 
-
+    
+    
     static ID_COUNTER: RefCell<IdCell> = RefCell::new(
-
+        
         IdCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))), 0)
-
-            .expect("Cannot create a counter")
-
+        
+        .expect("Cannot create a counter")
+        
     );
+
+    static TASKS: RefCell<StableBTreeMap<u64, TASK, Memory>> =
+    
+        RefCell::new(StableBTreeMap::init(
+    
+            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1)))
+    
+    ));
+    
 
     static MEMBERS: RefCell<StableBTreeMap<u64, Member, Memory>> =
 
@@ -139,20 +148,13 @@ thread_local! {
 
     static ID_COUNT: RefCell<IdCell> = RefCell::new(
 
-        IdCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1))), 0)
+        IdCell::init(MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(0))), 0)
 
             .expect("Cannot create a counter")
 
     );
 
 
-    static TASKS: RefCell<StableBTreeMap<u64, TASK, Memory>> =
-
-        RefCell::new(StableBTreeMap::init(
-
-            MEMORY_MANAGER.with(|m| m.borrow().get(MemoryId::new(1)))
-
-    ));
 
 }
 
@@ -169,10 +171,7 @@ fn get_member(id: u64) -> Result<Member, Error> {
 
         Some(member) => Ok(member),
 
-        None => Err(Error::NotFound {
-
-            msg: format!("a member with id={} not found", id),
-        }),
+        None => Err(Error::MemberNotFound),
     }
 }
 
@@ -187,10 +186,14 @@ fn _get_member(id: &u64) -> Option<Member> {
  // add a new member by the admin
  #[ic_cdk::update]
 
- fn add_member(mem : String) -> Option<Member> {
+ fn add_member(mem : String) -> Result<Member,Error> {
     let caller = caller().to_string();
     // assert(caller == ADMIN_PRINCIPAL_ID,"You are not authorized to add members");
     assert!(caller == ADMIN_PRINCIPAL_ID, "You are not authorized to add members");
+
+    if mem.is_empty(){
+        return Err(Error::InvalidInput);
+    }
  
      let id = ID_COUNT
  
@@ -208,19 +211,14 @@ fn _get_member(id: &u64) -> Option<Member> {
  
          id,
          principal_id: mem,
-         
- 
      };
  
      insert_member(&member);
  
-     Some(member)
+     Ok(member)
  
  }
  
-
-
-
  fn insert_member(member: &Member) {
 
     MEMBERS.with(|service| service.borrow_mut().insert(member.id, member.clone()));
@@ -232,6 +230,8 @@ fn _get_member(id: &u64) -> Option<Member> {
 #[ic_cdk::update]
 
 fn update_member(id: u64, princ_id:String) -> Result<Member, Error> {
+    let caller = caller().to_string();
+    assert!(caller == ADMIN_PRINCIPAL_ID,"Only Admins can update members");
 
     match MEMBERS.with(|service| service.borrow().get(&id)) {
 
@@ -244,16 +244,7 @@ fn update_member(id: u64, princ_id:String) -> Result<Member, Error> {
 
         }
 
-        None => Err(Error::NotFound {
-
-            msg: format!(
-
-                "couldn't update a member with id={}. message not found",
-
-                id
-            ),
-
-        }),
+        None => Err(Error::MemberNotFound),
 
     }
 
@@ -270,17 +261,7 @@ fn delete_member(id: u64) -> Result<Member, Error> {
 
         Some(member) => Ok(member),
 
-        None => Err(Error::NotFound {
-
-            msg: format!(
-
-                "couldn't delete a member with id={}. message not found.",
-
-                id
-
-            ),
-
-        }),
+        None => Err(Error::MemberNotFound ),
 
     }
 
@@ -317,10 +298,7 @@ fn get_task(id: u64) -> Result<TASK, Error> {
 
         Some(message) => Ok(message),
 
-        None => Err(Error::NotFound {
-
-            msg: format!("a task with id={} not found", id),
-        }),
+        None => Err(Error::TaskNotFound),
     }
 }
 
@@ -362,28 +340,9 @@ fn complete_task(id: u64) -> Result<TASK, Error> {
             do_insert(&task);
             Ok(task)
         }
-        None => Err(Error::NotFound {
-            msg: format!(
-                "couldn't update a task with id={}. task not found",
-                id
-            ),
-        }),
+        None => Err(Error::TaskNotFound),
     }
 }
-
-
-
-
-
-
-
-
-//return the ime
-#[ic_cdk::query]
-fn get_time() -> u64{
-return time()
-}
-
 
 
 
@@ -471,16 +430,7 @@ fn update_task(id: u64, payload: TASKPayload) -> Result<TASK, Error> {
 
         }
 
-        None => Err(Error::NotFound {
-
-            msg: format!(
-
-                "couldn't update a task with id={}. task not found",
-
-                id
-            ),
-
-        }),
+        None => Err(Error::TaskNotFound ),
 
     }
 
@@ -505,17 +455,7 @@ fn delete_task(id: u64) -> Result<TASK, Error> {
 
         Some(message) => Ok(message),
 
-        None => Err(Error::NotFound {
-
-            msg: format!(
-
-                "couldn't delete a task with id={}. task not found.",
-
-                id
-
-            ),
-
-        }),
+        None => Err(Error::TaskNotFound),
 
     }
 
@@ -523,12 +463,20 @@ fn delete_task(id: u64) -> Result<TASK, Error> {
 
 #[derive(candid::CandidType, Deserialize, Serialize)]
 
+// enum Error {
+
+//     NotFound { msg: String },
+
+
+// }
+
 enum Error {
-
-    NotFound { msg: String },
-
+    InvalidInput,
+    TaskNotFound,
+    MemberNotFound,
 
 }
+
 
 
 // a helper method to get a message by id. used in get_message/update_message
