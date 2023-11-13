@@ -21,7 +21,6 @@ type TASKPayload = record {
   assigned_to : text;
 };
 service : {
-  _hours_to_nanoseconds : (nat64) -> (nat64) query;
   add_member : (text) -> (opt Member);
   add_task : (TASKPayload) -> (Result);
   complete_task : (nat64) -> (Result);

@@ -297,11 +297,11 @@ fn get_all_members() -> Result<Vec<Member>,Error> {
 //search for all the tasks to get matching ones
 fn _search_member(_query:String) -> bool {
     
-    let tasks = MEMBERS.with(|tasks| {
-        let tasks = tasks.borrow().iter().filter(|(_, t)| (t.principal_id ==_query)).map(|(_, v)| v.clone()).collect::<Vec<Member>>();
-        return tasks
+    let members = MEMBERS.with(|members| {
+        let members = members.borrow().iter().filter(|(_, t)| (t.principal_id ==_query)).map(|(_, v)| v.clone()).collect::<Vec<Member>>();
+        return members
     });
-    if tasks.len() > 0 {
+    if members.len() > 0 {
         return true
     }else{
         return false
@@ -311,7 +311,6 @@ fn _search_member(_query:String) -> bool {
 
 //get the task using the tak id
 #[ic_cdk::query]
-
 fn get_task(id: u64) -> Result<TASK, Error> {
 
     match _get_task(&id) {
@@ -321,11 +320,8 @@ fn get_task(id: u64) -> Result<TASK, Error> {
         None => Err(Error::NotFound {
 
             msg: format!("a task with id={} not found", id),
-
         }),
-
     }
-
 }
 
 //get all tasks assigned to a specific user which are either completed or not
@@ -340,8 +336,7 @@ fn get_tasks_by_user(_user:Principal, completed: bool) -> Result<Vec<TASK>, Erro
 }
 
 
-//calculate and convert the hours to nanoseconds
-
+//calculate and convert hours to nanoseconds
 fn _hours_to_nanoseconds(hours: u64) -> u64{
     let minutes = hours * 60;
     let seconds = minutes * 60;
@@ -350,9 +345,6 @@ fn _hours_to_nanoseconds(hours: u64) -> u64{
     let nanoseconds = microseconds * 1000;
     return nanoseconds;
   }
-
-
-
 
 
 
@@ -365,7 +357,7 @@ fn complete_task(id: u64) -> Result<TASK, Error> {
             assert!((!task.is_done), "Task is already completed");
             assert!(task.assigned_to == caller, "You are not the assigne of this task");
             let task_deadline = task.start_time + _hours_to_nanoseconds(task.deadline as u64);
-            assert!(task_deadline > time(), "Deadline has already passed");
+            assert!(task_deadline < time(), "Deadline has already passed");
             task.is_done = true;
             do_insert(&task);
             Ok(task)
@@ -415,11 +407,11 @@ fn search_tasks(_query:String) -> Result<Vec<TASK>, Error> {
 #[ic_cdk::update]
 
 fn add_task(task: TASKPayload) ->  Result<TASK,Error> {
-let caller = caller().to_string();
-      let ee: String= task.assigned_to.clone();
-      assert!(caller == ADMIN_PRINCIPAL_ID,"Only Admins can add new tasks");
+    let caller = caller().to_string();
+    let assigned_member: String= task.assigned_to.clone();
+    assert!(caller == ADMIN_PRINCIPAL_ID,"Only Admins can add new tasks");
 
-   assert!(_search_member(ee),"Assigned member does not exist");
+    assert!(_search_member(assigned_member),"Assigned member does not exist");
 
     let id = ID_COUNTER
 
@@ -460,6 +452,8 @@ let caller = caller().to_string();
 #[ic_cdk::update]
 
 fn update_task(id: u64, payload: TASKPayload) -> Result<TASK, Error> {
+    let caller = caller().to_string();
+    assert!(caller == ADMIN_PRINCIPAL_ID,"Only Admins can update tasks");
 
     match TASKS.with(|service| service.borrow().get(&id)) {
 
