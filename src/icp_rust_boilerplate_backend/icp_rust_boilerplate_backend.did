@@ -1,20 +1,39 @@
 type Error = variant { NotFound : record { msg : text } };
-type Quiz = record {
+type Member = record { id : nat64; principal_id : text };
+type Result = variant { Ok : TASK; Err : Error };
+type Result_1 = variant { Ok : Member; Err : Error };
+type Result_2 = variant { Ok : vec Member; Err : Error };
+type Result_3 = variant { Ok : vec TASK; Err : Error };
+type TASK = record {
   id : nat64;
+  title : text;
   updated_at : opt nat64;
-  question : text;
-  answers : vec record { text; nat32 };
-  created_at : nat64;
-  options : vec text;
+  description : text;
+  deadline : nat8;
+  start_time : nat64;
+  assigned_to : text;
+  is_done : bool;
 };
-type QuizPayload = record { question : text; options : vec text };
-type Result = variant { Ok : Quiz; Err : Error };
-type Result_1 = variant { Ok : vec Quiz; Err : Error };
+type TASKPayload = record {
+  title : text;
+  description : text;
+  deadline : nat8;
+  assigned_to : text;
+};
 service : {
-  answer_quiz : (nat64, text) -> (Result);
-  create_quiz : (QuizPayload) -> (opt Quiz);
-  delete_quiz : (nat64) -> (Result);
-  get_all_quiz : () -> (Result_1) query;
-  get_quiz : (nat64) -> (Result) query;
-  update_quiz : (nat64, QuizPayload) -> (Result);
+  _hours_to_nanoseconds : (nat64) -> (nat64) query;
+  add_member : (text) -> (opt Member);
+  add_task : (TASKPayload) -> (Result);
+  complete_task : (nat64) -> (Result);
+  delete_member : (nat64) -> (Result_1);
+  delete_task : (nat64) -> (Result);
+  get_all_members : () -> (Result_2) query;
+  get_all_tasks : () -> (Result_3) query;
+  get_member : (nat64) -> (Result_1) query;
+  get_task : (nat64) -> (Result) query;
+  get_tasks_by_user : (principal, bool) -> (Result_3) query;
+  get_time : () -> (nat64) query;
+  search_tasks : (text) -> (Result_3) query;
+  update_member : (nat64, text) -> (Result_1);
+  update_task : (nat64, TASKPayload) -> (Result);
 }

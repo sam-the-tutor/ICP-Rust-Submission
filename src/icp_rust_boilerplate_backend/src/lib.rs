@@ -341,6 +341,7 @@ fn get_tasks_by_user(_user:Principal, completed: bool) -> Result<Vec<TASK>, Erro
 
 
 //calculate and convert the hours to nanoseconds
+
 fn _hours_to_nanoseconds(hours: u64) -> u64{
     let minutes = hours * 60;
     let seconds = minutes * 60;
