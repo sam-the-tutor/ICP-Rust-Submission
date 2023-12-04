@@ -4,7 +4,7 @@ use candid::{Decode, Encode,CandidType};
 use ic_cdk::api::time;
 use ic_stable_structures::memory_manager::{MemoryId, MemoryManager, VirtualMemory};
 use ic_stable_structures::{BoundedStorable, Cell, DefaultMemoryImpl, StableBTreeMap, Storable};
-use std::{borrow::Cow, cell::RefCell};
+use std::{borrow::Cow, cell::RefCell,collections::HashMap};
 // use validator::Validate;
 
 use ic_cdk::api::caller;
