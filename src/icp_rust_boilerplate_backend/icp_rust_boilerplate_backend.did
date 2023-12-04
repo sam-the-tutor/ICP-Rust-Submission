@@ -1,10 +1,19 @@
-type Error = variant { NotFound : record { msg : text } };
+type Error = variant {
+  InvalidInput : record { msg : text };
+  DeadlineAlreadyPassed;
+  TaskNotFound;
+  TaskAlreadyDone;
+  NotFound : record { msg : text };
+  NotAuthorized;
+  MemberNotFound;
+};
 type Member = record { id : nat64; principal_id : text };
-type Result = variant { Ok : TASK; Err : Error };
-type Result_1 = variant { Ok : Member; Err : Error };
+type MemberPayload = record { principal_id : text };
+type Result = variant { Ok : Member; Err : Error };
+type Result_1 = variant { Ok : Task; Err : Error };
 type Result_2 = variant { Ok : vec Member; Err : Error };
-type Result_3 = variant { Ok : vec TASK; Err : Error };
-type TASK = record {
+type Result_3 = variant { Ok : vec Task; Err : Error };
+type Task = record {
   id : nat64;
   title : text;
   updated_at : opt nat64;
@@ -14,25 +23,25 @@ type TASK = record {
   assigned_to : text;
   is_done : bool;
 };
-type TASKPayload = record {
+type TaskPayload = record {
   title : text;
   description : text;
   deadline : nat8;
   assigned_to : text;
 };
 service : {
-  add_member : (text) -> (opt Member);
-  add_task : (TASKPayload) -> (Result);
-  complete_task : (nat64) -> (Result);
-  delete_member : (nat64) -> (Result_1);
-  delete_task : (nat64) -> (Result);
+  add_member : (MemberPayload) -> (Result);
+  complete_task : (nat64) -> (Result_1);
+  create_task : (TaskPayload) -> (Result_1);
+  delete_member : (nat64) -> (Result);
+  delete_task : (nat64) -> (Result_1);
   get_all_members : () -> (Result_2) query;
   get_all_tasks : () -> (Result_3) query;
-  get_member : (nat64) -> (Result_1) query;
-  get_task : (nat64) -> (Result) query;
-  get_tasks_by_user : (principal, bool) -> (Result_3) query;
-  get_time : () -> (nat64) query;
-  search_tasks : (text) -> (Result_3) query;
-  update_member : (nat64, text) -> (Result_1);
-  update_task : (nat64, TASKPayload) -> (Result);
+  get_member : (nat64) -> (Result) query;
+  get_task : (nat64) -> (Result_1) query;
+  get_tasks_by_member : (text) -> (Result_3) query;
+  is_member : (text) -> (bool) query;
+  search_task : (text) -> (Result_3) query;
+  update_member : (nat64, MemberPayload) -> (Result);
+  update_task : (nat64, TaskPayload) -> (Result_1);
 }
