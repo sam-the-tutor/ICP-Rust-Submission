@@ -1,4 +1,8 @@
-type Error = variant { InvalidInput; TaskNotFound; MemberNotFound };
+type Error = variant {
+  InvalidInput : record { msg : text };
+  TaskNotFound;
+  MemberNotFound;
+};
 type Member = record { id : nat64; principal_id : text };
 type Result = variant { Ok : Member; Err : Error };
 type Result_1 = variant { Ok : TASK; Err : Error };
@@ -31,7 +35,6 @@ service : {
   get_member : (nat64) -> (Result) query;
   get_task : (nat64) -> (Result_1) query;
   get_tasks_by_user : (principal, bool) -> (Result_3) query;
-  get_time : () -> (nat64) query;
   search_tasks : (text) -> (Result_3) query;
   update_member : (nat64, text) -> (Result);
   update_task : (nat64, TASKPayload) -> (Result_1);
